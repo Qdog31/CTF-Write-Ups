@@ -1,0 +1,63 @@
+# Trivial Flag Transfer Protocol
+- Category : Forensics 	
+- Points : 90
+- Flag: picoCTF{h1dd3n_1n_pLa1n_51GHT_18375919}
+
+## Challenge
+
+Figure out how they moved the flag.
+
+Hint: What are some other ways to hide data?
+
+## Solve
+
+1) I first started out by opening the provided PCAP file. 
+
+2) After looking through the PCAP file I noticed that almost all of the protocols were TFTP (hence the challenge name Trivial `Flag Transfer Protocol`).
+
+3) Most of the information was non-sense until I found the packet which contained something interesting (value below). I could not tell what cipher it was just by looking at it so I used my handy dandy `CyberChef` and `Boxentriq` skills. I threw the cipher into CyberChef and used the wand tool to decode it from `Hex`. I then threw the output into the boxentriq Cipher Identifier and Analyzer tool to figure out that the last layer of encoding was a `Caesar Cypher`. After decoding this value I got the below message. Adding spaces to make it readable results with: `TFT DOESNT ENCRYPT OUR TRAFFIC SO WE MUST DISGUISE OUR FLAG TRANSFER. FIGURE OUT A WAY TO HIDE THE FLAG AND I WILL CHECK BACK FOR THE PLAN.`.
+
+
+     Original Encoded value: 
+     ```
+     47534743514252464147524150454c434742484547454e5353565046424a525a484647515646544856465242484553594e5447454e41465352452e5356544845524248474e4a4e4c47425556515247555253594e544e4151564a56595950555250584f4e505853424547555243594e410a
+     ```
+
+     Decoded Mes
+sage: 
+    ```
+    TFTPDOESNTENCRYPTOURTRAFFICSOWEMUSTDISGUISEOURFLAGTRANSFER.FIGUREOUTAWAYTOHIDETHEFLAGANDIWILLCHECKBACKFORTHEPLAN
+    ```
+
+4) After painstakingly searching through a bunch of other packets, I found another interesting message and used the same process from step 3. The readable sentence is: `I USED THE PROGRAM AND HID IT WITH - DUE DILIGENCE. CHECK OUT THE PHOTOS.` 
+
+    Decoded 2nd Message: 
+    ```
+    IUSEDTHEPROGRAMANDHIDITWITH-DUEDILIGENCE.CHECKOUTTHEPHOTOS
+    ```
+
+5) With this new found knowledge, I knew that I would need a way to look at the photos. The first message also tipped off that these images might contain some hidden information. 
+
+    To get access to the images I `exported the objects` from the PCAP file by going to File -> Export Objects -> TFTP. This resulted with the files: `instructions.txt, plan, program.deb, picture1.bmp, picture2.bmp, and picture3.bmp`. The instructions.txt and plan files were just the encoded messages I saw from earlier packet analysis. But, the pictures and program.deb were interesting. 
+
+
+6) Next, I opened each of the images aswell as the program.deb file. When I opened the .deb file it went to a `Snap Store` page for the `steghide` application. I instantly realized that the image could be containing some secrets information. 
+
+7) Now I needed to figure out how to find this secret information. When initially trying to extract the files from each image with steghide I realized that I did not have the password. I tried to bruteforce it with `stegseek` (https://github.com/RickdeJager/stegseek) but it did not work. 
+
+    I then realized that I had the password all along! Going back to the second decoded message, I remembered that it said `"I USED THE PROGRAM AND HID IT WITH - DUE DILIGENCE. CHECK OUT THE PHOTOS."` This could be what I was looking for all along. I tried the password `DUE DILIGENCE` on each file but it did not work. I then re-looked at the original decoded message and realized that there were no spaces. I then tried the password `DUEDILIGENCE` on each file it worked! It turned out that it was the third file and it contained a `flag.txt` file. 
+    
+    The magic command was: 
+    ```
+    steghide extract -sf picture3.bmp
+    ```
+
+8) I opened the flag.txt file to see: `picoCTF{h1dd3n_1n_pLa1n_51GHT_18375919}`. 
+
+
+
+## Thoughts
+
+I really liked this challenge! I liked how it included the wireshark, cypher, and steghide aspects. The multiple steps really kept me on my toes and I learned a lot through the journey. This was the first time I have ever extracted  objects from a PCAP file and I will add this to my initial checks for future PCAP challenges. 
+
+In addition, when I was originally trying to brute force the password I was looking very deeply into ways that I could get secret information from a locked file. At this point I stumbled upon stegseek `--seed` option and found the encryption algorythm, and encryption mode. This was a dead end. I look forward to more challenges like this. 
