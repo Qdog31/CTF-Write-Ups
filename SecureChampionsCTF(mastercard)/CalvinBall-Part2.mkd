@@ -1,0 +1,34 @@
+# Calvin Ball - Part 2 
+- Category : Blue
+- Points : 300
+- Flag: cc1d7c3ab344beb357a5bcba011ff6e0
+
+
+## Challenge
+
+While Hobbes was pecking away at numbers the threat actor was able to access his machine and execute a command. Try looking at the memory image the forensics team provided and see if you can make out what command the attacker ran.
+NOTE: Volatility3 comes pre-installed on the REMnux host. You'll want to confirm the program is working by validating the memory image. You can do this by downloading the image (`wget $url_to_file`) and running the following command:
+
+`remnux@remnux:~$ sudo vol3 -f $memory_file windows.info`
+
+Objective:
+Analyze the memory dump and locate the flag. 
+
+**Given CalbinBall-Secure-Champs-2022-memory.raw file** 
+
+## Solve
+
+1) I first looked over the provided information and tried to open the raw file. 
+
+2) After I could not figure out a good way to do this, I looked into volatility and what it could do. I found the following website that had some good information: https://newtonpaul.com/malware-analysis-memory-forensics-with-volatility-3/.
+
+3) I first attempted to use `vol3 -f <file name>` but was presented with an error saying I was missing a plugin.Then, I used `vol3 -f <file name> windows.pstree.PsTree` to list all the processes. I have not spent a lot of time familiarizing myself with processes, so I had to look most of them up to make sure they were legit. They checked out in the end.  
+
+4) I continued to follow the tutorial and took at look at network connections using `vol3 -f <file name> windows.netscan.NetScan`. This was not useful to me and after relooking at the challenge details, I realised that I needed to find the `command` used. The next part of the tutorial talked about digging deeper and listing the process command line arguments. 
+
+5) Now realizing what I needed to find, I used the command `vol3 -f <file name> windows.cmdline`, scrolled down, and found the line `2096 cmd.exe "C:\WINDOWS\system32\cmd.exe" - flag.json=cc1d7c3ab344beb357a5bcba011ff6e0`. With everything after the flag.json being my flag. 
+
+
+## Thoughts
+
+I really liked this challenge! It took me about twenty minutes to try and open the raw file itself, but after realizing I needed to use a kali tool, it was smooth sailing. I learned a lot about volatility 3, its plugins, and analyzing files with a blue mindset. 

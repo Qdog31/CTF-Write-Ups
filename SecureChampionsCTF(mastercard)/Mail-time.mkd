@@ -1,0 +1,60 @@
+# It's Maaaaaaail time! 
+- Category : Red 
+- Points :  300
+- Flag: dd40854529afc764a3572a4ad8b1de41
+
+
+## Challenge
+
+Overview: Looks like someone left an internal FTP server wide open on the network. There might be some interesting files ripe for exfiltration and analysis. 
+
+Objective: Locate the insecure FTP server and determine whether any of its content can be used to achieve greater levels of access. 
+
+IP: 10.3.17.220
+
+
+## Solve
+
+1) I firt started with an nmap scan (`nmap -sV 10.3.17.220`) so I can see the open ports that I will be working with. 
+
+2) I noticed that ftp port 21 was open so I attempted to do an  anonymous login with `ftp anonymous@10.3.17.220` and just the `enter` button as the password. This worked! 
+
+3) I then used `ls -a` to see everything on this machine and found that the only thing here was a `files` directory. I did `cd files` to step into that directory, and found the below files:
+```
+drwxr-xr-x    2 1001     1001         4096 Jun 22 10:13 .
+dr-xr-xr-x    3 65534    65534        4096 Jun 22 10:13 ..
+-rw-r--r--    1 1001     1001       272949 Jun 22 10:13 Business Financial Statement.pdf
+-rw-r--r--    1 1001     1001       106265 Jun 22 10:13 Business-and-Finance-Gantt-Charts.jpg
+-rw-r--r--    1 1001     1001       259133 Jun 22 10:13 
+-rw-r--r--    1 1001     1001        89998 Jun 22 10:13 India.jpg
+-rw-r--r--    1 1001     1001        97520 Jun 22 10:13 Marketing and Promotion.jpg
+-rw-r--r--    1 1001     1001       115299 Jun 22 10:13 Smartphones.jpg
+-rw-r--r--    1 1001     1001        89417 Jun 22 10:13 Social Media Traffic.jpg
+-rw-------    1 1001     1001           75 Jun 22 10:13 flag.json
+-rw-r--r--    1 1001     1001       404210 Jun 22 10:13 mail.bak
+```
+4) I then looked through each of the files in hopes of a flag. The pdf's were all very long yet genuine documents. I looked at the images to see if they had any useful information, but they did not. Finally, the last two files `flag.json` and `mail.bak` stood out to me. I used my prior FTP experience to try and download the flag.json file, but I kept get presented with a `550 Failed to open file.` error. I spent a lot of time trying to figure out how to get this to work, but noticed that the only person with any type of permissions was the owner. (I learned more about file permissions from: https://linuxize.com/post/understanding-linux-file-permissions/) 
+
+5) After realizing I could not download this file from my current platform, I realized that there was still the `mail.bak` file I hadn't looked at yet. After analysis of the file, I realized that most of the messages were base64 encoded. I used an online base64 file decoder to read these messages. Once everything was decoded, I stumbled upon a conversation where a user was asking for the others key. This included a public key, private key, and the secret message. 
+
+6) I then researched how to decrypt a message with RSA and found the following command: `openssl rsautl -decrypt -in raw.txt -out out.txt -inkey private.pem`. This command returned with the error messages: 
+```RSA operation error
+140656514798976:error:0407109F:rsa routines:RSA_padding_check_PKCS1_type_2:pkcs decoding error:../crypto/rsa/rsa_pk1.c:251:
+
+140656514798976:error:04065072:rsa routines:rsa_ossl_private_decrypt:padding check failed:../crypto/rsa/rsa_ossl.c:491:
+```
+but after more research learned that I needed to add the `-oaep` option at the end of my command.  
+
+7) After a successful decryption, I opened the `out.txt` file that said `Here are the FTP creds I mentioned during the meeting: username: ftpadmin password: A8Guto5ilf0!f54#a`
+
+8) Using these credentials, I logged into the ftp server and was able to use the `get flag.json` command to finally download the flag file and get the solve. 
+
+## Thoughts
+
+Since I thought this challenge would be as easy as realizing anonymous ftp was on and downloading the flag.json file, I was frustrated at first. I thought there was something wrong with the challenge. But after looking at the other files within the ftp server and realizing that there was more to this challenge, I became less frustrated. This challenge was my first time working with and understanding how RSA worked and I learned a lot about working through multi step problems. 
+
+
+
+
+
+

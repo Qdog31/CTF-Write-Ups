@@ -1,0 +1,68 @@
+#  Everyone Loves a Log
+- Category :  Blue
+- Points : 300
+- Flag: c9e9ae27a90a54cd1d018b8808419150
+
+
+## Challenge
+
+Overview: Our logs look like something fishy is going on. A flag probably is in here somehwere, but where? 
+
+Objective: Analyze the two logs and find the flag portions - assemble them to score. 
+
+*** Provided with a folder that contained an apache.log and an apache_error.log file. ***
+  
+
+## Solve
+
+1) Since I was provided with two log files, I opened them both to see what I was working with.
+Below is an example of what was provided in each log file. 
+
+apache.log: 
+```
+1207.122.35.243 - - [13/Jun/2022:13:14:18 -0500] "PATCH /robust/vertical/flag/revolutionize HTTP/1.1" 500 25298
+```
+apache_error.log: 
+```
+[Mon Jun 13 13:19:00 2022] [alert] [pid 731:tid 9131] [client 121.179.233.140:7794] We need to copy the optical PNG program! correlationid: 39be
+```
+
+2) After looking at each file throughouly, I decided to grep each of them for the string `FLAG`. I did `grep flag apache.log` first and it returned with 372 different instances of the word flag. 
+
+3) I then did `grep flag apache_error.log` to see if theres anything interesting. I found:  
+```
+[Mon Jun 13 12:44:21 2022] [info] [pid 5638:tid 9172] [client 171.31.88.120:37301] The flag is somewhere near here. 
+```
+
+4) Since I knew that the logs were connected, I decided to grep the `apache.log` file for the ip address that the flag was somewhere near. I did this with `grep 171.31.88.120 apache.log`. This returned the below five lines:
+```
+171.31.88.120 - - [13/Jun/2022:12:44:44 -0500] "GET /where/is/the?flag HTTP/2.0" 400 312
+171.31.88.120 - - [13/Jun/2022:12:45:10 -0500] "PATCH /secrets/proactive/users?part=1&code=corre HTTP/2.0" 400 15891
+171.31.88.120 - - [13/Jun/2022:12:48:11 -0500] "PATCH /experiences/tend/too?part=2&code=latio HTTP/2.0" 400 15891
+171.31.88.120 - - [13/Jun/2022:12:34:55 -0500] "POST /integrated/leverage?part=3&code=nid HTTP/2.0" 304 18870
+171.31.88.120 - - [13/Jun/2022:13:07:32 -0500] "GET /mission-critical/scalable/harness/leading-edge?code=0b70c HTTP/2.0" 201 7676
+```
+Now this looks interesting! It is important to notice the words `part` and `code` in the above lines. The first line from 171.31.88.120 contains a GET request for the flag and the following lines basically tell you where the flag is. Putting the three parts and codes together, we get:
+`corre-latio-nid-0b70c`. This correlates to `correlationid:0b70c` just like what we saw in the apache_error.log files. 
+
+5) Now that I was provided with a correlationid, I grepped the error log file with `grep 0b70c apache_error.log` and found: 
+```
+[Mon Jun 13 13:45:29 2022] [trace1-8] [pid 28:tid 8274] [client 61.127.73.132:12092] You can't calculate the bandwidth without MD5 first [c9e9ae+]! correlationid:0b70c
+[Mon Jun 13 13:46:29 2022] [trace1-8] [pid 2734:tid 8380] [client 61.127.73.132:50285] Try to quantify the HTTP bus, maybe it will synthesize the redundant card second [27a90a+]! correlationid:0b70c
+[Mon Jun 13 13:49:19 2022] [trace1-8] [pid 7454:tid 4773] [client 61.127.73.132:32783] Programming the firewall won't do anything, we need to transmit the open-source SSL third [54cd1d+] transmitter! correlationid:0b70c
+[Mon Jun 13 13:56:39 2022] [trace1-8] [pid 686:tid 5922] [client 61.127.73.132:11044] If we transmit the monitor, we can get to the XML port through the optical fourth [018b880+] circuit! correlationid:0b70c
+[Mon Jun 13 14:05:09 2022] [trace1-8] [pid 7629:tid 1810] [client 229.194.203.124:42452] You can't compress the monitor without connecting the fifth [8419150] JBOD hard drive! correlationid:0b70c
+```
+6) At this point, I remembered back to the CTF documentation that all flags were in Md5Sum format. So, after looking at these five lines, I could see that each one had a chunk of the flag in order. This can be seen by looking at the last set of brackets within each line aswell as the word right before. For example, in the first result we see `first [c9e9ae+]` which is the first part of the flag. 
+
+7) Knowing this, I put together all five chunks of the flag and got: `c9e9ae27a90a54cd1d018b8808419150`.
+
+
+## Thoughts
+
+This challenge was one of the ones I wanted to ensure I got clarrification on before leaving because I had no idea where to start. I was able to grep each file myself and find the keyword flag everywhere, but I was unsure of what to do after that. I did not realize at first that I should grep the second file for the ip address that said "The flag is somewhere near here." Looking back at this challenge, I am glad that I had to put my critical thinking and grep skills to the test. Next time I get a challenge like this, I will be sure to look at the lines carefuly and look for patterns that could connect the two files. 
+
+
+
+
+

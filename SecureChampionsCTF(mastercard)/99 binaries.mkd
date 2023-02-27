@@ -1,0 +1,49 @@
+## 99 Binaries 
+- Category : Blue
+- Points : 500
+- Flag: 7ebc8c5e53701c383ef18c325385fb34
+
+## Challenge
+
+Overview: This looks pretty straight forward! A FLAG is spread across a few binaries. Use your scripting capabilities in concert with binary analysis to identify the FLAG and submit! 
+
+Objective: Download the file and discover how to extract the FLAG. Not all binaries have what you need. Submit the md5sum (a 32 character string) as the flag value (case sensitive).
+
+*** I was provided with a zipped folder filled with 99 different binaries labeled in the file-##.bin format *** 
+
+## Solve
+
+1) My first instinct was to throw a binary in Ghedra and see what was on it, but quickly realized that this would not work. 
+
+2) I then realized that catting the file would not work and that I needed another way. I discovered the `strings` command and used it on the first binary (`strings file-01.bin`)to see what it contained. This command printed out a gigantic amount of information and it did not seem useful to me. 
+
+3) Since I knew I was looking for the flag, I used `strings file-01.bin | grep FLAG` to help narrow the info down. This printed: 
+```
+152587890625762939453125Bidi_ControlCTF_FLAG:[{]Join_ControlMeetei_MayekPahawh_HmongSora_SompengSyloti_Nagriabi mismatchbad flushGenbad g statusbad recoverycan't happencas64 failedchan receivedevice errordumping heapend tracegc
+
+build   CGO_CFLAGS=
+build   CGO_CPPFLAGS=
+build   CGO_CXXFLAGS=
+build   CGO_LDFLAGS=
+build   CGO_CFLAGS=
+build   CGO_CPPFLAGS=
+build   CGO_CXXFLAGS=
+build   CGO_LDFLAGS=
+```
+Something else I learned during my internship at MasterCard is that I need to look for patterns. Since I knew there were 98 more binaries to look at, I did used the string command on a few more binaries to see if anything changes. I used the string command on file-03.bin and it was missing the entire block of text that the first file had. I then stringed the third binary and noticed that it had that text again. I then noticed that within each file with this block of text there was a `ControlCTF_FLAG:` string. This looked interesting because the character that was within brackets following this string was changing for each binary. 
+
+4) Now that I knew what I was looking for, I decided to try and grep for all the binaries that had this `ControlCTF_FLAG:` string with the command: `strings *.bin | grep CTF_FLAG`. 
+
+* *.bin just means "look for all files that end with .bin" 
+
+5) Now that I could see all the files that contained the `ControlCTF_FLAG:` string, the pattern was clear. I could see within the first six results that the word `flag` was starting to get spelled within the brackets (the brackets after ControlCTF_FLAG). At this point, since I had searched through all the bin files with the ControlCTF_FLAG string, I knew the flag was near. 
+
+6) At this point, I needed to clean up the results and get a clear flag. So, I used `strings *.bin | grep CTF_FLAG | cut -d "[" -f 2 | cut -d "]" -f 1 `. This command looks for all binary files with CTF_FLAG in it, and cuts out everything except the character within the brackets.
+
+
+7) We have the flag! But, it's in a vertical line and hard to copy into the scoreboard. So, I used the command: `strings *.bin | grep CTF_FLAG | cut -d "[" -f 2 | cut -d "]" -f 1 | paste -sd '' ` to merge the lines into one string. This provided me with the flag: `{"flag":"7ebc8c5e53701c383ef18c325385fb34}` 
+
+## Thoughts
+
+This challenge was amazing! I liked how I was provided with so many binaries that I was forced to use scripting to cut exactly what I wanted from the files. Before now, I never fully understood grep and how to pipe together multiple commands to this extent. It was interesting to see the importance of parsing through information when given an overwhelming amount of data that might not be useful at the time. 
+

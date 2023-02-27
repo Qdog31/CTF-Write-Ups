@@ -1,0 +1,39 @@
+#  Notorious RGB
+- Category : Blue 
+- Points :  1000
+- Flag: 6a204bd89f3c8348afd5c77c717a097a
+
+
+## Challenge
+  
+Overview: Redacting can be hard, especially if you use weird file formats. The PPM file before you contains a redacted secret. Find it and submit the flag. 
+
+Objective: Download the file and discover a way to un-redact the flag. Submit the unredacted md5sum ( a 32 character string) as the flag value (case sensitive)
+
+*** I was provided with a .ppm file that had five black boxes and various different texts ***
+
+## Solve
+
+1) The first thing I did was open the file and see what it looked like. It was colorful and had five different black boxes with various other texts scrambled around.I then had to figure out what a ppm file was because I have never heard of it.
+
+2) After using one of the hints, I was directed to: https://en.wikipedia.org/wiki/Netpbm. This provided good information on how colors are represented in ASCII mode. At this point, I found that 0 is correlatedwith the color black. 
+
+3) I then needed to see what was contained within the image. I went ahead and used `vim notorious_rgb.ppm` to look at the bytes that the colored image was made of. I could see that all of the bytes were between 0 and 255 which makes sense based off my previous research. I then noticed that there were numerous chunks of all 0's that was 10+ lines long. Even more interesting, were the chunks of bytes that looked like:
+```
+00 00 000 00 00 000 00 00 000 00 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 000 00 0 0 00 0 0 00 00 000 00 0 00 000 0 0 0 0 0 0 0 0 0 0 0 0 00 00 00 0 0 000 00 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+```
+These bytes stood out and I knew that they were within (or possible under) the black color. 
+
+4) I then learned that you could conduct a search and replace within VIM by doing: `:%s/what-your-changing/what-to-change-it-to/g` . I learned that the `%` means all instancess, the `s` means substituting, and the `g` means every instance on this line. 
+
+5) I used this new found knowledge to change every instance of 00 to 240 (this could be any number, as long as you could see it through the black box surrounding the words).
+
+6) I did this until I changed the correct bytes that contained the flag and saved this new configuration to a different file. Since I changed the color from black, the flag was clearly displayed within the image. 
+
+
+## Thoughts
+
+This was a really cool challenge. I havn't encountered a challenge like this where I needed to change the bytes within a file to change the visual appearance of an image. After doing research at the beginning of this challenge, I knew that I would need to change the bytes to something besides black, but I was unsure of how to do this. This was the first time I used VIM this extensively and to perform a search and replace. For the CTF's C3T does, I am sure I will be faced with a challenge somewhat similar to this one, and I am confident that i will be able to atleast do the research necessary to solve it. 
+
+
+

