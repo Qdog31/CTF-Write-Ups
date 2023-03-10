@@ -1,4 +1,4 @@
-# Created by Quintin Sherrod 
+# Solve script created by Quintin Sherrod 
 # Challenge vault-door-1 (pico gym)
 # Points: 100 
 # February 25 2023 
@@ -25,7 +25,7 @@ for key,value in sorted(dic.items(), key=lambda item: int(item[0])): # orders di
     flag.append(value)
 
 flag_content = "".join(flag)
-full_flag = "PicoCTF{{{value}}}" #pico flag contains curly brackets and so we need two more pairs for a format string.
+full_flag = "PicoCTF{{{value}}}" #pico flag contains curly brackets and so we need two more pairs for a format string. This was fun to figure out. 
 
 print(full_flag.format(value=flag_content))
     
