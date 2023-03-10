@@ -1,3 +1,5 @@
+// This file was provided. 
+
 import java.util.*;
 
 class VaultDoor1 {
